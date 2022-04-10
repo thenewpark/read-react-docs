@@ -78,3 +78,73 @@ Render and commit
   - Render
   - Commit
 */
+
+/*
+State as a snapshot
+
+- React의 state는 JS에서의 단순 변수와는 달리, 'snapshot'처럼 동작한다.
+  - React state을 setting 하면 리렌더링이 trigger된다. 
+*/
+
+/*
+Queueing a series of state changes
+*/
+
+// 이렇게 써도 업데이트가 1번만 된다.
+import { useState } from 'react';
+
+export default function Counter() {
+  const [score, setScore] = useState(0);
+  
+  function increment() {
+    setScore(score + 1);
+  }
+  
+  return (
+    <>
+      <button onClick={ () => {
+        increment();
+        increment();
+        increment();
+      }}  
+      >+3</button>
+      <h1>Score: {score}</h1>
+    </>
+  );
+}
+
+// 왜 그런가?
+// state을 set하면 -> re-render를 요청하게 된다.
+// 하지만 아직 코드가 실행중이라면 변경이 적용되지 않는다.
+// 의도한대로 동작시키려면 상태를 설정할 때 updater function을 넘겨주어야 한다. 
+
+import { useState } from 'react';
+
+export default function Counter() {
+  const [score, setScore] = useState(0);
+  
+  function increment() {
+    setScore(s => s + 1);
+  }
+  
+  return (
+    <>
+      <button onClick={ () => {
+        increment();
+        increment();
+        increment();
+      }}  
+      >+3</button>
+      <h1>Score: {score}</h1>
+    </>
+  );
+}
+
+/*
+Updating objects/arrays in state
+
+- state에 object/array가 있다면, object/array를 직접 바꿔서 업데이트해서는 안된다.
+  - 대신, 새로운 object/array를 만들거나, 기존 상태의 복사본을 만들어서 그걸로 업데이트할 것
+  - 이때 주로 전개 연산자spread syntax `...`를 사용하게 된다. 
+(왜 에 대한 부분이 없는디, 상세 목차에 있으려나)
+*/
