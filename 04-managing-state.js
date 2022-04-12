@@ -141,3 +141,96 @@ export default function Form() {
   );
 }
 
+/*
+Sharing state between components 
+
+- 컴포넌트 2개가 항상 함께 바뀌어야 한다면?
+  - lifting state up: 상태를 각 컴포넌트에서 제거해 가장 가까운 공통 부모 컴포넌트로 옮기고 -> props로 내려준다
+*/
+
+import { useState } from 'react';
+
+export default function Accordion() {
+  const [activeIndex, setActiveIndex] = useState(0);
+  return (
+    <>
+      <h2>Almaty, Kazakhstan</h2>
+      <Panel
+        title="About"
+        isActive={activeIndex === 0}
+        onShow={() => setActiveIndex(0)}
+      >
+        With a population of about 2 million, Almaty is Kazakhstan's largest city. From 1929 to 1997, it was its capital city.
+      </Panel>
+      <Panel
+        title="Etymology"
+        isActive={activeIndex === 1}
+        onShow={() => setActiveIndex(1)}
+      >
+        The name comes from <span lang="kk-KZ">алма</span>, the Kazakh word for "apple" and is often translated as "full of apples". In fact, the region surrounding Almaty is thought to be the ancestral home of the apple, and the wild <i lang="la">Malus sieversii</i> is considered a likely candidate for the ancestor of the modern domestic apple.
+      </Panel>
+    </>
+  );
+}
+
+function Panel({
+  title,
+  children,
+  isActive,
+  onShow
+}) {
+  return (
+    <section className="panel">
+      <h3>{title}</h3>
+      {isActive ? (
+        <p>{children}</p>
+      ) : (
+        <button onClick={onShow}>
+          Show
+        </button>
+      )}
+    </section>
+  );
+}
+
+/*
+Preserving and resetting state 
+
+- 컴포넌트를 rerender할 때, React는 트리의 어떤 부분을 유지할 지/업데이트할 지/다시 생성해야 할 지를 결정해야 한다.
+- 기본적으로 React는 이전에 렌더된 컴포넌트 트리와 일치하는(match up) 부분을 그대로 유지한다.
+- 대부분의 경우, React가 알아서 어떤 컴포넌트를 변경할 지 잘 결정해준다. 
+- 하지만 가끔 이렇게 알아서 해주는 방식이 의도한 대로의 동작이 아니라면?
+*/
+
+import { useState } from 'react';
+import Chat from './Chat.js';
+import ContactList from './ContactList.js';
+
+export default function Messenger() {
+  const [to, setTo] = useState(contacts[0]);
+  return (
+    <div>
+      <ContactList
+        contacts={contacts}
+        selectedContact={to}
+        onSelect={contact => setTo(contact)}
+      />
+      <Chat contact={to} />
+    </div>
+  )
+}
+
+const contacts = [
+  { name: 'Taylor', email: 'taylor@mail.com' },
+  { name: 'Alice', email: 'alice@mail.com' },
+  { name: 'Bob', email: 'bob@mail.com' }
+];
+
+// 다른 key를 내려주어서 React가 기본 동작을 덮어씌우고, 강제로 컴포넌트의 상태를 재설정하게 만들 수 있다.
+// key를 다르게 준다는 건 React에게 이 컴포너트가 달라졌으니, '다른' 컴포넌트로 취급하라고 말하는 일이다.
+
+
+
+
+
+
