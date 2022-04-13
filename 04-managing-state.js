@@ -195,6 +195,7 @@ function Panel({
 
 /*
 Preserving and resetting state 
+: 상태의 lifecycle과 그걸 제어하는 법
 
 - 컴포넌트를 rerender할 때, React는 트리의 어떤 부분을 유지할 지/업데이트할 지/다시 생성해야 할 지를 결정해야 한다.
 - 기본적으로 React는 이전에 렌더된 컴포넌트 트리와 일치하는(match up) 부분을 그대로 유지한다.
@@ -229,8 +230,143 @@ const contacts = [
 // 다른 key를 내려주어서 React가 기본 동작을 덮어씌우고, 강제로 컴포넌트의 상태를 재설정하게 만들 수 있다.
 // key를 다르게 준다는 건 React에게 이 컴포너트가 달라졌으니, '다른' 컴포넌트로 취급하라고 말하는 일이다.
 
+import { useState } from 'react';
+import Chat from './Chat.js';
+import ContactList from './ContactList.js';
+
+export default function Messenger() {
+  const [to, setTo] = useState(contacts[0]);
+  return (
+    <div>
+      <ContactList
+        contacts={contacts}
+        selectedContact={to}
+        onSelect={contact => setTo(contact)}
+      />
+      <Chat key={to.email} contact={to} />
+    </div>
+  )
+}
+
+const contacts = [
+  { name: 'Taylor', email: 'taylor@mail.com' },
+  { name: 'Alice', email: 'alice@mail.com' },
+  { name: 'Bob', email: 'bob@mail.com' }
+];
+
+/*
+Extracting state logic into a reducer
+
+- 컴포넌트에서 여러 가지 상태 업데이트를 여러 이벤트 핸들러에 걸쳐서 하면 제어가 어려워질 수 있다.
+- 이 경우, 이런 상태 업데이트 로직들을 별도의 함수로 만들어서 컴포넌트 밖으로 뺄 수 있다.
+  - 이 함수를 'reducer'라고 부른다.
+- 이렇게 분리하면 컴포넌트에 있는 이벤트 핸들러는 사용자의 'action'에만 집중할 수 있게 된다. 
+- 결론적으로, reducer 함수는 각 action에 대해 상태가 어떻게 업데이트되어야 하는 지를 정의해둔 것이라 할 수 있다. 
+*/
+
+import { useReducer } from 'react';
+import AddTask from './AddTask.js';
+import TaskList from './TaskList.js';
+
+export default function TaskApp() {
+  const [tasks, dispatch] = useReducer(
+    taskReducer,
+    initialTasks
+  );
+  
+  function handleAddTask(text) {
+    dispatch({
+      type: 'added',
+      id: nextId++,
+      text: text
+    });
+  }
+  
+  function handleChangeTask(task) {
+    dispatch({
+      type: 'changed',
+      task: task
+    });
+  }
+  
+  function handleDeleteTask(taskId) {
+    dispatch({
+      type: 'deleted',
+      id: taskId
+    });
+  }
+  
+  return (
+    <>
+      <h1>Prague itinerary</h1>
+      <AddTask
+        onAddTask={handleAddTask}
+      />
+      <TaskList
+        tasks={tasks}
+        onChangeTask={handleChangeTask}
+        onDeleteTask={handleDeleteTask}
+      />
+    </>
+  );
+}
+
+function tasksReducer(tasks, action) {
+  switch (action.type) {
+    case 'added': {
+      return [...tasks, {
+        id: action.id,
+        text: action.text,
+        done: false
+      }];
+    }
+    case 'changed': {
+      return tasks.map(t => {
+        if (t.id === action.task.id) {
+          return action.task;
+        } else {
+          return t;
+        }
+      });
+    }
+    case 'deleted': {
+      return tasks.filter(t => t.id !== action.id);
+    }
+    default: {
+      throw Error('Unknown action: ' + action.type);
+    }
+  }
+}
+
+let nextId = 3;
+const initialTasks = [
+  { id: 0, text: 'Visit Kafka Museum', done: true },
+  { id: 1, text: 'Watch a puppet show', done: false },
+  { id: 2, text: 'Lennon Wall pic', done: false }
+];
+
+/*
+Passing data deeply with context
+
+- 일반적으로 부모 컴포넌트에서 자식 컴포넌트로 정보를 props로 내려준다.
+- 하지만 여러 컴포넌트를 거쳐서 계속 props를 내려주는 건 불편
+- `context`는 부모 컴포넌트가 props로 명시적으로 내려주지 않아도 
+  자기 아래 트리에 속한 어떤 컴포넌트에서든 필요한 정보에 자유롭게 접근할 수 있게 해준다. 
+- 
+*/
+
+/*
+Scaling up with reducer and context
+
+- Reducer는 컴포넌트의 상태 업데이트 로직들을 모아둘 수 있게 해주고
+- Context는 하위 컴포넌트들에 깊이에 상관없이 정보를 전달할 수 있게 해준다.
+- Reducer와 Context의 조합으로 복잡한 화면에서의 상태 관리를 할 수 있다. 
+  - 부모 컴포넌트가 복잡한 상태 관리 로직을 reducer 로 들고 있고
+  - 하위 트리에 있는 자식 컴포넌트들은 어디서든 그 상태를 context에서 읽어서 사용하거나 / 상태 업데이트를 위해 action을 dispatch한다.
+*/
 
 
 
 
 
+      
