@@ -250,3 +250,85 @@ Step 4: Remove any non-essential state variables
 const [answer, setAnswer] = useState('');
 const [error, setError] = useState(null);
 const [status, setStatus] = useState('typing'); // 'typing', 'submitting', or 'success'
+
+// 한 단계 더.
+// 여전히 이상한 케이스가 남아있긴 하다. `status`가 'success'일 때 `error`가 null이 아니면 이상하지 않을까? 
+// 이런 경우 단순히 state들로 두는 게 아니라, reducer로 추출해서 여러 개의 state들이 어떻게 조합될 지 정리할 수 있다.
+// cf) https://beta.reactjs.org/learn/extracting-state-logic-into-a-reducer
+
+/*
+Step 5: Connect the event handlers to set state
+
+- 마지막으로 state를 세팅해주기 위한 이벤트 핸들러들을 연결해준다.
+*/
+
+import { useState } from 'react';
+
+export default function Form() {
+  const [answer, setAnswer] = useState('');
+  const [error, setError] = useState(null);
+  const [status, setStatus] = useState('typing');
+  
+  if (status === 'success') {
+    return <h1>That's right!</h1>
+  }
+  
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setStatus('submitting');
+    
+    try {
+      await submitForm(answer);
+      setStatus('success');
+    } catch (err) {
+      setStatus('typing');
+      setError(err);
+    }
+  }
+  
+  function handleTextareChange(e) {
+    setAnswer(e.target.value);
+  }
+  
+  return (
+    <>
+      <h2>City quiz</h2>
+      <p>
+        In which city is there a billboard that turns air into drinkable water?
+      </p>
+      <form onSubmit={handleSubmit}>
+        <textarea
+          value={answer}
+          onChange={handleTextareChange}
+          disabled={status === 'submitting'}
+        />
+        <br />
+        <button disabled={
+          answer.length === 0 || status === 'submitting'
+        }>
+            Submit
+        </button>
+        { error !== null && 
+          <p className="Error">
+            {error.message}
+          </p>
+        }
+      </form>
+    </>
+  );
+}
+
+function submitForm(answer) {
+  // Pretend it's hitting the network.
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      let shouldError = answer.toLowerCase() !== 'lima'
+      if (shouldError) {
+        reject(new Error('Good guess but a wrong answer. Try again!'));
+      } else {
+        resolve();
+      }
+    }, 1500);
+  });
+}
+
