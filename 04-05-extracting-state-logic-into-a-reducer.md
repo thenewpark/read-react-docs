@@ -75,10 +75,145 @@ const initialTasks = [
   - 3) 컴포넌트에서 reducer를 사용한다.
 
 ### Step 1: Move from setting state to dispatching actions
+state를 setting 하는 로직을 -> action을 dispatch하도록 바꾼다.
+- AS-IS: 이벤트 핸들러가 state를 setting해서 'React가 무엇을 할지'를 구체적으로 지정해준다.
+  ```javascript
+  function handleAddTask(text) {
+    setTasks([...tasks, {
+      id: nextId++,
+      text: text,
+      done: false
+    }]);
+  }
+
+  function handleChangeTask(task) {
+    setTasks(tasks.map(t => {
+      if (t.id === task.id) {
+        return task;
+      } else {
+        return t;
+      }
+    }));
+  }
+
+  function handleDeleteTask(taskId) {
+    setTasks(
+      tasks.filter(t => t.id !== taskId)
+    );
+  }
+  ```
+- TO-BE
+  - 이벤트 핸들러에서 'action'을 dispatch해서 -> React에게 '사용자가 방금 어떤 행동을 했는지'를 알려준다.
+  - 그러니까 구체적으로 상태값을 조작하는 게 아니라, 사용자가 어떤 액션을 하고자 했는지를 선언한다.
+  ```javascript
+  function handleAddTask(text) {
+    dispatch({
+      type: 'added',
+      id: nextId++,
+      text: text,
+    });
+  }
+
+  function handleChangeTask(task) {
+    dispatch({
+      type: 'changed',
+      task: task
+    });
+  }
+
+  function handleDeleteTask(taskId) {
+    dispatch({
+      type: 'deleted',
+      id: taskId
+    });
+  }
+  ```
+  - dispatch에 넘겨주는 이 object를 'action'이라는 이름으로 부른다. 특별히 정해진 규칙 없이 일반적인 JS Object지만, '어떤 일이 일어났는지'에 대한 최소한의 정보를 담는 용도로 사용한다.
+    - 하지만 보통 어떤 일이 일어났는지를 설명하는 `type` 문자열은 포함하는 것이 일반적인 컨벤션이다. 그 외 필드는 자유롭게 추가한다. 
+    - action은 컴포넌트에 한정되기 때문에 단순히 'added' 같이 일반적인 형식으로 써도 문제없다. 
+
 
 ### Step 2: Write a reducer function
+- reducer function은 상태 로직을 담는 곳이다. 
+- [Input] 현재 상태, action object를 받아서 -> [Output] 다음 상태 를 리턴해준다.
+```javascript
+function yourReducer(state, action) {
+  // return next state for React to set
+}
+```
+- Step1 에서 제거했던 상태 로직을 여기에 넣는다.
+  - 1) 현재 상태를 첫 번재 인자에 넣는다.
+  - 2) action object를 두 번째 인자에 넣는다.
+  - 3) action에 따라 React가 세팅해야 하는 다음 상태를 리턴해준다.
+  ```javascript
+  function tasksReducer(tasks, action) {
+    if (action.type === 'added') {
+      return [...tasks, {
+        id: action.id,
+        text: action.text,
+        done: false
+      }];
+    } else if (action.type === 'changed') {
+      return tasks.map(t => {
+        if (t.id === action.task.id) {
+          return action.task;
+        } else {
+          return t;
+        }
+      });
+    } else if (action.type === 'deleted') {
+      return tasks.filter(t => t.id !== action.id);
+    } else {
+      throw Error('Unknown action: ' + action.type);
+    }
+  }
+  ```
+  - 보통 reducer에서는 switch 문을 사용하는 것이 일반적인 컨벤션이다. 여러 action에 따라 다른 동작을 수행하는 로직이 반복되므로, switch문이 일반적인 if/else보다 가독성이 좋기 때문
+  ```javascript
+  function tasksReducer(tasks, action) {
+    switch (action.type) {
+      case 'added': {
+        return [...tasks, {
+          id: action.id,
+          text: action.text,
+          done: false
+        }];
+      }
+      case 'changed': {
+        return tasks.map(t => {
+          if (t.id === action.task.id) {
+            return action.task;
+          } else {
+            return t;
+          }
+        });
+      }
+      case 'deleted': {
+        return tasks.filter(t => t.id !== action.id);
+      }
+      default: {
+        throw Error('Unknown action: ' + action.type);
+      }
+    }
+  }
+  ```
 
 ### Step 3: Use the reducer from your component
+이제 만들어둔 `tasksReducer`를 컴포넌트에서 가져다 사용할 수 있다. React에서 제공해주는 `useReducer`훅을 사용해 둘을 연결해줄 수 있다. 
+```javascript
+import { useReducer } from 'react';
+
+// const [tasks, setTasks] = useState(initialTasks);
+const [tasks, dispatch] = useReducer(tasksReducer, initialTasks);
+```
+- `useReducer` 훅은
+  - [Input] 2가지 인자를 받아서
+    - 1) reducer function
+    - 2) 초기 상태 
+  - [Output] 2가지를 리턴해준다.
+    - 1) 상태 값
+    - 2) dispatch function(reducer에게 사용자의 action을 dispatch해주는 용도) 
+
 
 ## Comparing useState and useReducer
 
