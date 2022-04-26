@@ -214,8 +214,16 @@ const [tasks, dispatch] = useReducer(tasksReducer, initialTasks);
     - 1) 상태 값
     - 2) dispatch function(reducer에게 사용자의 action을 dispatch해주는 용도) 
 
+- reducer를 별도의 파일로 분리할 수도 있다.
+  - reducer를 만드는 건 '관심사의 분리' 컴포넌트의 이벤트 핸들러는 '무슨 일이 일어났는지'만 action을 dispatch해서 신경쓰고, 그 action이 일어났을 때 '상태state가 어떻게 업데이트 되어야 하는지'는 reducer function이 신경을 쓰도록 분리하는 것이다. 
 
-## Comparing useState and useReducer
+## Comparing useState and useReducer 
+- reducer가 무조건 좋은 건 (당연히) 아니다!
+- 코드량: 보통 `useReducer`를 쓰면 `useState`를 쓰는 것보다 코드량이 늘어난다. 대신, 상태를 비슷하게 처리해야 하는 이벤트 핸들러가 여러 개인 경우는 오히려 불필요하게 반복되는 코드를 줄일 수도 있다.
+- 가독성: 간단하게 상태를 관리할 때는 `useState`가 읽고 파악하기에도 좋다. 하지만 복잡해진다면 `useReducer`를 쓰는 게 로직의 'how'와 'what happened'를 깔끔하게 분리하는 방법일 수 있다.
+- 디버깅: `useState`를 쓰는 경우, 어디에서 state를 잘못 세팅해주고 있는지를 추적하기가 어렵다. `useReducer`를 쓴다면, reducer 함수 내에 콘솔 로그를 찍어보았을 때 상태가 어떻게 업데이트되고 있으며 어떤 이유에서(어떤 action에서 트리거됐는지)인지를 파악하기 쉽다. 하지만, 쉬운 것과 별개로 useState보다 useReducer가 항상 조금 더 타고타고 들어가야 파악할 수 있는 코드가 될 수밖에 없다.
+- 테스트: reducer는 순수함수로 컴포넌트에 의존적이지 않다. 이 말은 독립적으로 export해서 테스트하기 쉽다는 뜻이기도 하다. 보통 컴포넌트는 실제 환경에서 쓰이는 그대로 테스트하는 게 좋긴 하지만, 복잡한 상태 업데이트 로직같은 경우는 로직만 따로 떼어내서 테스트하는 것도 좋은 방법이다.
+- 개인적인 선호: 사람마다 reducer 선호도는 다르다. useState와 useReducer는 항상 호환 가능하다. 
 
 ## Writing reducers well  
 
