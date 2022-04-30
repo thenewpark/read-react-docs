@@ -41,3 +41,128 @@
 - 1) create: context 만들기 ex) `LevelContext`
 - 2) use: 데이터를 써야 하는 컴포넌트에서 context 사용하기 ex) `<Header>`가 `LevelContext`를 **사용**
 - 3) provide: 데이터를 제공해주는 컴포넌트에서 context 제공해주기 ex) `<Section>`이 `LevelContext`를 **제공**
+
+## Step 1: Create the context 
+
+- 일단, context를 만든다.
+  - 인자로 context의 기본값을 받는다.
+  - 기본값은 객체를 포함해 어떤 값이든 가능하다.
+- component가 사용할 수 있도록 해주기 위해 만든 context를 export한다.
+
+```js
+import { createContext } from 'react';
+
+export const LevelContext = createContext(1);
+```
+
+## Step 2: Use the context
+
+- 만든 context를 `useContext`훅을 통해 사용한다.
+
+```js
+import { useContext } from 'react';
+import { LevelContext } from './LevelContext.js';
+
+export default function Heading({ children }) {
+  // useContext(LevelContext) = Heading 컴포넌트가 LevelContext를 읽어올거야~
+  const level = useContext(LevelContext);
+}
+```
+- 이러면 이제 `Heading`컴포넌트에 `level`값을 props로 내려줄 필요가 없다.
+
+```jsx
+// AS-IS
+<Section>
+  <Heading level={4}>Sub-sub-heading</Heading>
+  <Heading level={4}>Sub-sub-heading</Heading>
+  <Heading level={4}>Sub-sub-heading</Heading>
+</Section>
+
+// TO-BE
+<Section level={4}>
+  <Heading>Sub-sub-heading</Heading>
+  <Heading>Sub-sub-heading</Heading>
+  <Heading>Sub-sub-heading</Heading>
+</Section>
+```
+
+- 지금 상태에서는 level값이 4로 적용되지 않는다! context를 '사용'만 하고, '제공'하는 코드를 쓰기 전이기 때문. React는 context를 어디에서 가져와야 하는지 아직 모른다.
+  - 이 경우, context의 기본값을 사용한다. 
+
+## Step 3: Provide the context
+
+- context를 사용할 곳을 context provider로 감싸준다.
+  - context를 사용하는 컴포넌트에서는 UI 트리에서 가장 가까운 `<LevelContext.Provider>`가 제공하는 값을 사용한다. 
+
+```js
+import { LevelContext } from './LevelContext.js';
+
+export default function Section({ level, children }) {
+  return (
+    <section className="section">
+      /* "React야, Section 컴포넌트 안에 있는 컴포넌트가 LevelContext를 달라고 하면, 이 level값을 줘라" */
+      <LevelContext.Provider value={level}> 
+        {children}
+      </LevelContext.Provider>
+    </section>
+  );
+}
+
+```
+
+### Using and providing context from the same component
+
+위의 예시를 이렇게 개선해볼 수도 있다. 
+```js
+import { useContext } from 'react';
+import { LevelContext } from './LevelContext.js';
+
+export default function Section({ children }) {
+  const level = useContext(LevelContext);
+  return (
+    <section className="section">
+      <LevelContext.Provider value={level + 1}>
+        {children}
+      </LevelContext.Provider>
+    </section>
+  );
+}
+```
+
+그러면 이렇게 직접 level값을 일일이 지정해주지 않아도, 컴포넌트를 중첩시킨 정도에 따라 알아서 level이 결정된다.
+```
+import Heading from './Heading.js';
+import Section from './Section.js';
+
+export default function Page() {
+  return (
+    <Section>
+      <Heading>Title</Heading>
+      <Section>
+        <Heading>Heading</Heading>
+        <Heading>Heading</Heading>
+        <Heading>Heading</Heading>
+        <Section>
+          <Heading>Sub-heading</Heading>
+          <Heading>Sub-heading</Heading>
+          <Heading>Sub-heading</Heading>
+          <Section>
+            <Heading>Sub-sub-heading</Heading>
+            <Heading>Sub-sub-heading</Heading>
+            <Heading>Sub-sub-heading</Heading>
+          </Section>
+        </Section>
+      </Section>
+    </Section>
+  );
+}
+
+```
+
+## Before you use context
+
+- 정보를 여러 단계를 걸쳐서 내려줘야 한다고 무조건 context를 사용하는 게 좋은 건 아니다.
+- context를 사용하기 전에, 아래와 같은 점을 고려해보자
+  - 1) props를 내려주는 것으로 해결된다면 그렇게 하자. props를 계속 내려주는 게 번거로울 수는 있지만, 어떤 컴포넌트가 어떤 데이터를 사용하는지를 더 명시적으로 드러내는 방법일 수 있다.
+  - 2) 컴포넌트를 추출해서 `childern`으로 JSX를 넘겨주는 방법을 고려해보자. 만약 데이터를 내려주는 중간에 해당 데이터를 사용하지는 않는 컴포넌트들이 여러 개 있다면, 중간에 어느정도 추출해낼 컴포넌트들이 있다는 신호일 수 있다. 컴포넌트를 추출해서, 데이터를 전달해줘야 하는 레이어의 수를 줄일 수는 없는지 고려해보자.
+  - 이 둘이 모두 적합하지 않다면, 그 다음에야 context를 고려한다.
